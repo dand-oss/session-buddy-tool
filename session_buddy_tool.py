@@ -12,8 +12,7 @@ import traceback
 import argparse
 import cjson
 import sqlite3
-import os
-from os.path import expanduser
+from pathlib import Path
 
 
 #
@@ -21,7 +20,7 @@ from os.path import expanduser
 #
 def load_exclude_file(path):
     excluded = []
-    if os.path.isfile(path):
+    if path.isfile():
         with open(path) as f:
             excluded = f.readlines()
     else:
@@ -57,7 +56,7 @@ def remove_duplicates(items):
     return unique
 
 
-def filter_excluded(items):
+def filter_excluded(items, excluded_urls):
     filtered = []
     for item in items:
         found = 0
@@ -91,33 +90,33 @@ def get_saved_sessions(conn, table, full):
     sessions = []
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id, windows FROM %s;" % table)
+        cur.execute(f"SELECT id, windows FROM {table};")
         for row in cur.fetchall():
             item = extract_links(row, full)
             sessions += item["items"]
 
     except sqlite3.Error as e:
-        print("Get sessions error: %s" % e.args[0])
+        print(f"Get sessions error: {e.args[0]}")
     return sessions
 
 
 def insert_row(conn, table, row_id, items):
     try:
         cur = conn.cursor()
-        cur.execute("INSERT INTO %s VALUES();" % table)
+        cur.execute(f"INSERT INTO {table} VALUES();")
         return True
     except sqlite3.Error as e:
-        print("Add merged sessions error: %s" % e.args[0])
+        print(f"Add merged sessions error: {e.args[0]}")
         return False
 
 
 def delete_row(conn, table, row_id):
     try:
         cur = conn.cursor()
-        cur.execute("DELETE * FROM %s WHERE id=?;" % table, row_id)
+        cur.execute(f"DELETE * FROM {table} WHERE id={row_id};")
         return True
     except sqlite3.Error as e:
-        print("Delete error: %s" % e.args[0])
+        print(f"Delete error: {e.args[0]}")
         return False
 
 
@@ -129,7 +128,7 @@ def action_export(conn, tables, excluded_urls):
     for table in tables:
         items += get_saved_sessions(conn, table, False)
 
-    items = remove_duplicates(filter_excluded(items))
+    items = remove_duplicates(filter_excluded(items), excluded_urls)
 
     print(cjson.encode(items))
 
@@ -139,7 +138,7 @@ def action_merge(conn, tables, excluded_urls):
     for table in tables:
         items += get_saved_sessions(conn, table, True)
 
-    items = remove_duplicates(filter_excluded(items))
+    items = remove_duplicates(filter_excluded(items), excluded_urls)
 
     # TODO: merge records
     # TODO: clear existing sessions
@@ -151,26 +150,32 @@ def action_clean(conn, tables, excluded_urls):
     try:
         cur = conn.cursor()
         for table in tables:
-            cur.execute("DELETE * FROM %s WHERE id=?;" % table)
+            cur.execute(f"DELETE * FROM {table}")
     except sqlite3.Error as e:
-        print("Cleanup error: %s" % e.args[0])
+        print(f"Cleanup error: {e.args[0]}")
 
 
-if __name__ == "__main__":
+def main(argv=None):
+    if not argv:
+        argv = sys.argv
+
     tables = ["SavedSessions", "PreviousSessions"]
 
     # handle commandline arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--action",
-                        choices=['export', 'merge', 'clean'],
-                        help="Action: export, merge, clean",
-                        required=True)
-    parser.add_argument("-e", "--exclude",
-                        help="Path to file with excluded urls",
-                        required=False)
-    parser.add_argument("-p", "--profile",
-                        help="Path to Chrome profile",
-                        required=False)
+    parser.add_argument(
+        "-a",
+        "--action",
+        choices=['export', 'merge', 'clean'],
+        help="Action: export, merge, clean", required=True)
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        help="Path to file with excluded urls", required=False)
+    parser.add_argument(
+        "-p",
+        "--profile",
+        help="Path to Chrome profile", required=False)
     args = parser.parse_args()
 
     # apply parsed commandline arguments
@@ -178,12 +183,12 @@ if __name__ == "__main__":
     if args.exclude:
         excluded_urls = load_exclude_file(args.exclude)
 
-    chrome_profile = "%s/.config/google-chrome/Default/" % expanduser("~")
+    chrome_profile = Path.home() / ".config" / "google-chrome" / "Default"
     if args.profile:
-        chrome_profile = args.chrome_profile
+        chrome_profile = Path(args.chrome_profile)
 
     extension = "chrome-extension_edacconmaakjimmfgnblocblbcdcpbko_0"
-    db_path = "%s/databases/%s/2" % (chrome_profile, extension)
+    db_path = f"{chrome_profile}/databases/{extension}/2"
     conn = sqlite3.connect(db_path)
     try:
         if args.action == "export":
@@ -198,7 +203,7 @@ if __name__ == "__main__":
 
         sys.exit(0)
     except Exception as e:
-        print("Main error: %s" % e)
+        print(f"Main error: {e}")
         print('-'*60)
         traceback.print_exc(file=sys.stdout)
         print('-'*60)
@@ -206,3 +211,7 @@ if __name__ == "__main__":
     finally:
         if conn:
             conn.close()
+
+
+if __name__ == "__main__":
+    exit(main())
