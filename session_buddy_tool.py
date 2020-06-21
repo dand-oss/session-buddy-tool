@@ -167,15 +167,18 @@ def main(argv=None):
         "-a",
         "--action",
         choices=['export', 'merge', 'clean'],
-        help="Action: export, merge, clean", required=True)
+        help="Action: export, merge, clean",
+        required=True)
     parser.add_argument(
         "-e",
         "--exclude",
-        help="Path to file with excluded urls", required=False)
+        help="Path to file with excluded urls",
+        required=False)
     parser.add_argument(
         "-p",
         "--profile",
-        help="Path to Chrome profile", required=False)
+        help="Path to Chrome profile",
+        required=False)
     args = parser.parse_args()
 
     # apply parsed commandline arguments
