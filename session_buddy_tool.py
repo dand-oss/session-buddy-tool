@@ -15,6 +15,7 @@ import sqlite3
 import os
 from os.path import expanduser
 
+
 #
 # Helpers
 #
@@ -24,8 +25,9 @@ def load_exclude_file(path):
         with open(path) as f:
             excluded = f.readlines()
     else:
-        print "File with excluded urls can not be found!"
+        print("File with excluded urls can not be found!")
     return excluded
+
 
 def extract_links(row, full):
     tabs = cjson.decode(row[1])
@@ -43,7 +45,8 @@ def extract_links(row, full):
                     items.append({"title": i["title"], "url": i["url"]})
     return {"id": row_id, "items": items}
 
-#TODO: maybe use sets to speed things up?
+
+# TODO: maybe use sets to speed things up?
 def remove_duplicates(items):
     seen = []
     unique = []
@@ -52,6 +55,7 @@ def remove_duplicates(items):
             seen.append(item["url"])
             unique.append(item)
     return unique
+
 
 def filter_excluded(items):
     filtered = []
@@ -64,19 +68,24 @@ def filter_excluded(items):
             filtered.append(item)
     return filtered
 
+
 def build_tabs(id, top, width, heighttabs):
-    return {"alwaysOnTop":false,
-            "focused":true,
-            "height":height,
-            "id":id,
-            "incognito":false,
-            "left":0,
-            "state":"normal",
-            "tabs":tabs,
-            "top":top,
-            "type":"normal",
-            "width":width
-        }
+    tabs = 0
+    height = 0
+    return {
+        "alwaysOnTop": False,
+        "focused": True,
+        "height": height,
+        "id": id,
+        "incognito": False,
+        "left": 0,
+        "state": "normal",
+        "tabs": tabs,
+        "top": top,
+        "type": "normal",
+        "width": width
+    }
+
 
 def get_saved_sessions(conn, table, full):
     sessions = []
@@ -87,27 +96,31 @@ def get_saved_sessions(conn, table, full):
             item = extract_links(row, full)
             sessions += item["items"]
 
-    except sqlite3.Error, e:
-        print "Get sessions error: %s" % e.args[0]
+    except sqlite3.Error as e:
+        print("Get sessions error: %s" % e.args[0])
     return sessions
+
 
 def insert_row(conn, table, row_id, items):
     try:
         cur = conn.cursor()
         cur.execute("INSERT INTO %s VALUES();" % table)
         return True
-    except sqlite3.Error, e:
-        print "Add merged sessions error: %s" % e.args[0]
+    except sqlite3.Error as e:
+        print("Add merged sessions error: %s" % e.args[0])
         return False
+
 
 def delete_row(conn, table, row_id):
     try:
         cur = conn.cursor()
         cur.execute("DELETE * FROM %s WHERE id=?;" % table, row_id)
         return True
-    except sqlite3.Error, e:
-        print "Delete error: %s" % e.args[0]
+    except sqlite3.Error as e:
+        print("Delete error: %s" % e.args[0])
         return False
+
+
 #
 # Actions
 #
@@ -118,7 +131,8 @@ def action_export(conn, tables, excluded_urls):
 
     items = remove_duplicates(filter_excluded(items))
 
-    print cjson.encode(items)
+    print(cjson.encode(items))
+
 
 def action_merge(conn, tables, excluded_urls):
     items = []
@@ -127,18 +141,20 @@ def action_merge(conn, tables, excluded_urls):
 
     items = remove_duplicates(filter_excluded(items))
 
-    #TODO: merge records
-    #TODO: clear existing sessions
-    #TODO: add new session with merged data
+    # TODO: merge records
+    # TODO: clear existing sessions
+    # TODO: add new session with merged data
     return None
+
 
 def action_clean(conn, tables, excluded_urls):
     try:
         cur = conn.cursor()
         for table in tables:
             cur.execute("DELETE * FROM %s WHERE id=?;" % table)
-    except sqlite3.Error, e:
-        print "Cleanup error: %s" % e.args[0]
+    except sqlite3.Error as e:
+        print("Cleanup error: %s" % e.args[0])
+
 
 if __name__ == "__main__":
     tables = ["SavedSessions", "PreviousSessions"]
@@ -181,11 +197,11 @@ if __name__ == "__main__":
             sys.exit(1)
 
         sys.exit(0)
-    except Exception, e:
-        print "Main error: %s" % e
-        print '-'*60
+    except Exception as e:
+        print("Main error: %s" % e)
+        print('-'*60)
         traceback.print_exc(file=sys.stdout)
-        print '-'*60
+        print('-'*60)
         sys.exit(1)
     finally:
         if conn:
