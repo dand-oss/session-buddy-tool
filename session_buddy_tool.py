@@ -67,21 +67,27 @@ def filter_excluded(item_list, excluded_url_list):
     sus_ext = "chrome-extension://klbibkeccnjlkjkiokjodocebajanakg"
     filtered = []
     for item in item_list:
+
         url = item.url
+
+        # fix the url
         if url.startswith(sus_ext):
+            # expand uri from Great Suspender extension
             try:
                 uri_loc = url.rindex("uri=")
                 item.url = url[uri_loc + 4:]
             except Exception:
                 pass
-        found = False
+
+        is_excluded = False
         for url in excluded_url_list:
             if item.url.startswith(url):
-                found = True
+                is_excluded = True
                 break
 
-        if not found:
+        if not is_excluded:
             filtered.append(item)
+
     return filtered
 
 
