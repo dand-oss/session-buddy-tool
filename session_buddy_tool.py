@@ -17,6 +17,19 @@ import ujson
 import yaml
 import sqlite3
 from pathlib import Path
+from dataclasses import dataclass
+
+
+@dataclass
+class TabInfo:
+    title: str
+    url: str
+
+
+@dataclass
+class LinkInfo:
+    id: int
+    item_list: list = None
 
 
 #
@@ -24,46 +37,52 @@ from pathlib import Path
 #
 def extract_links(row, full):
     tabs = ujson.decode(row[1])
+
     row_id = None
     for key in tabs[0].keys():
+
         obj = tabs[0][key]
+
         if key == "id":
             row_id = obj
+
         elif key == "tabs":
             item_list = []
+
             for i in obj:
                 if full:
                     item_list.append(i)
                 else:
-                    item_list.append({"title": i["title"], "url": i["url"]})
-    return {"id": row_id, "item_list": item_list}
+                    item_list.append(TabInfo(i["title"], i["url"]))
+
+    return LinkInfo(row_id, item_list)
 
 
 # TODO: maybe use sets to speed things up?
 def remove_duplicates(item_list):
-    seen = []
-    unique = []
+    seen_list = []
+    unique_list = []
     for item in item_list:
-        if not item["url"] in seen:
-            seen.append(item["url"])
-            unique.append(item)
-    return unique
+        if item.url not in seen_list:
+            seen_list.append(item.url)
+            unique_list.append(item)
+    return unique_list
 
 
 def filter_excluded(item_list, excluded_url_list):
     sus_ext = "chrome-extension://klbibkeccnjlkjkiokjodocebajanakg"
     filtered = []
     for item in item_list:
-        url = item["url"]
+        url = item.url
         if url.startswith(sus_ext):
             try:
                 uri_loc = url.rindex("uri=")
-                item["url"] = url[uri_loc + 4:]
+                item.url = url[uri_loc + 4:]
             except Exception:
                 pass
         found = False
         for url in excluded_url_list:
-            if item["url"].startswith(url):
+            if item.url.startswith(url):
                 found = True
                 break
 
@@ -95,8 +114,8 @@ def get_saved_sessions(conn, tname, full):
     cur = conn.cursor()
     cur.execute(f"SELECT id, windows FROM {tname};")
     for row in cur.fetchall():
-        item = extract_links(row, full)
-        sessions += item["item_list"]
+        link_info = extract_links(row, full)
+        sessions += link_info.item_list
     return sessions
 
 
@@ -116,7 +135,7 @@ def delete_row(conn, tname, row_id):
 def action_export(conn, table_list, excluded_url_list):
     item_list = []
     for tname in table_list:
-        item_list += get_saved_sessions(conn, tname, False)
+        item_list += get_saved_sessions(conn, tname, full=False)
 
     item_list = remove_duplicates(
         filter_excluded(
@@ -130,7 +149,7 @@ def action_export(conn, table_list, excluded_url_list):
 def action_merge(conn, table_list, excluded_url_list):
     item_list = []
     for tname in table_list:
-        item_list += get_saved_sessions(conn, tname, True)
+        item_list += get_saved_sessions(conn, tname, full=True)
 
     item_list = remove_duplicates(
         filter_excluded(
