@@ -14,6 +14,7 @@
 import sys
 import argparse
 import ujson
+import yaml
 import sqlite3
 from pathlib import Path
 
@@ -50,13 +51,23 @@ def remove_duplicates(item_list):
 
 
 def filter_excluded(item_list, excluded_url_list):
+    sus_ext = "chrome-extension://klbibkeccnjlkjkiokjodocebajanakg"
     filtered = []
     for item in item_list:
-        found = 0
+        url = item["url"]
+        if url.startswith(sus_ext):
+            try:
+                uri_loc = url.rindex("uri=")
+                item["url"] = url[uri_loc + 4:]
+            except Exception:
+                pass
+        found = False
         for url in excluded_url_list:
             if item["url"].startswith(url):
-                found += 1
-        if found == 0:
+                found = True
+                break
+
+        if not found:
             filtered.append(item)
     return filtered
 
@@ -79,24 +90,24 @@ def build_tabs(id, top, width, heighttabs):
     }
 
 
-def get_saved_sessions(conn, table, full):
+def get_saved_sessions(conn, tname, full):
     sessions = []
     cur = conn.cursor()
-    cur.execute(f"SELECT id, windows FROM {table};")
+    cur.execute(f"SELECT id, windows FROM {tname};")
     for row in cur.fetchall():
         item = extract_links(row, full)
         sessions += item["item_list"]
     return sessions
 
 
-def insert_row(conn, table, row_id, item_list):
+def insert_row(conn, tname, row_id, item_list):
     cur = conn.cursor()
-    cur.execute(f"INSERT INTO {table} VALUES();")
+    cur.execute(f"INSERT INTO {tname} VALUES();")
 
 
-def delete_row(conn, table, row_id):
+def delete_row(conn, tname, row_id):
     cur = conn.cursor()
-    cur.execute(f"DELETE * FROM {table} WHERE id={row_id};")
+    cur.execute(f"DELETE * FROM {tname} WHERE id={row_id};")
 
 
 #
@@ -104,21 +115,22 @@ def delete_row(conn, table, row_id):
 #
 def action_export(conn, table_list, excluded_url_list):
     item_list = []
-    for table in table_list:
-        item_list += get_saved_sessions(conn, table, False)
+    for tname in table_list:
+        item_list += get_saved_sessions(conn, tname, False)
 
     item_list = remove_duplicates(
         filter_excluded(
             item_list,
             excluded_url_list))
 
-    print(ujson.encode(item_list))
+    print(yaml.dump(item_list))
+    # print(ujson.encode(item_list))
 
 
 def action_merge(conn, table_list, excluded_url_list):
     item_list = []
-    for table in table_list:
-        item_list += get_saved_sessions(conn, table, True)
+    for tname in table_list:
+        item_list += get_saved_sessions(conn, tname, True)
 
     item_list = remove_duplicates(
         filter_excluded(
@@ -132,8 +144,8 @@ def action_merge(conn, table_list, excluded_url_list):
 
 def action_clean(conn, table_list, excluded_url_list):
     cur = conn.cursor()
-    for table in table_list:
-        cur.execute(f"DELETE * FROM {table}")
+    for tname in table_list:
+        cur.execute(f"DELETE * FROM {tname}")
 
 
 def main(argv=None):
