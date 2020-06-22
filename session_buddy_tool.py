@@ -47,13 +47,7 @@ def extract_links(row, full):
             row_id = obj
 
         elif key == "tabs":
-            item_list = []
-
-            for i in obj:
-                if full:
-                    item_list.append(i)
-                else:
-                    item_list.append(TabInfo(i["title"], i["url"]))
+            item_list = [TabInfo(i["title"], i["url"]) for i in obj]
 
     return LinkInfo(row_id, item_list)
 
@@ -167,6 +161,17 @@ def action_clean(conn, table_list, excluded_url_list):
         cur.execute(f"DELETE * FROM {tname}")
 
 
+def get_db_path(args):
+
+    chrome_profile = Path.home() / ".config" / "google-chrome" / "Default" \
+        if not args.profile \
+        else Path(args.chrome_profile)
+
+    sb_ext_id = "chrome-extension_edacconmaakjimmfgnblocblbcdcpbko_0"
+    sb_ext_ver = "3"
+    return chrome_profile / "databases" / sb_ext_id / sb_ext_ver
+
+
 def main(argv=None):
     if not argv:
         argv = sys.argv
@@ -200,13 +205,7 @@ def main(argv=None):
         with open(args.exclude) as f:
             excluded_url_list = f.readlines()
 
-    chrome_profile = Path.home() / ".config" / "google-chrome" / "Default"
-    if args.profile:
-        chrome_profile = Path(args.chrome_profile)
-
-    ext_id = "chrome-extension_edacconmaakjimmfgnblocblbcdcpbko_0"
-    ext_ver = "3"
-    db_path = chrome_profile / "databases" / ext_id / ext_ver
+    db_path = get_db_path(args)
 
     rc = 0  # assume success
     print(f"{db_path=}")
