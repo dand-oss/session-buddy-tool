@@ -13,7 +13,7 @@
 
 import sys
 import argparse
-import cjson
+import ujson
 import sqlite3
 from pathlib import Path
 
@@ -22,7 +22,7 @@ from pathlib import Path
 # Helpers
 #
 def extract_links(row, full):
-    tabs = cjson.decode(row[1])
+    tabs = ujson.decode(row[1])
     row_id = None
     for key in tabs[0].keys():
         obj = tabs[0][key]
@@ -108,10 +108,11 @@ def action_export(conn, table_list, excluded_url_list):
         item_list += get_saved_sessions(conn, table, False)
 
     item_list = remove_duplicates(
-        filter_excluded(item_list),
-        excluded_url_list)
+        filter_excluded(
+            item_list,
+            excluded_url_list))
 
-    print(cjson.encode(item_list))
+    print(ujson.encode(item_list))
 
 
 def action_merge(conn, table_list, excluded_url_list):
@@ -120,8 +121,9 @@ def action_merge(conn, table_list, excluded_url_list):
         item_list += get_saved_sessions(conn, table, True)
 
     item_list = remove_duplicates(
-        filter_excluded(item_list),
-        excluded_url_list)
+        filter_excluded(
+            item_list,
+            excluded_url_list))
 
     # TODO: merge records
     # TODO: clear existing sessions
@@ -172,10 +174,11 @@ def main(argv=None):
         chrome_profile = Path(args.chrome_profile)
 
     ext_id = "chrome-extension_edacconmaakjimmfgnblocblbcdcpbko_0"
-    ext_ver = 3
-    db_path = chrome_profile / ext_id / "databases" / ext_id / ext_ver
+    ext_ver = "3"
+    db_path = chrome_profile / "databases" / ext_id / ext_ver
 
     rc = 0  # assume success
+    print(f"{db_path=}")
     with sqlite3.connect(db_path) as conn:
         if args.action == "export":
             action_export(conn, table_list, excluded_url_list)
