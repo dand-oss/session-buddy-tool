@@ -91,22 +91,33 @@ def filter_excluded(item_list, excluded_url_list):
     return filtered
 
 
-def build_tabs(id, top, width, heighttabs):
-    tabs = 0
-    height = 0
-    return {
-        "alwaysOnTop": False,
-        "focused": True,
-        "height": height,
-        "id": id,
-        "incognito": False,
-        "left": 0,
-        "state": "normal",
-        "tabs": tabs,
-        "top": top,
-        "type": "normal",
-        "width": width
-    }
+"""
+tab_json
+{
+   "tabs": [
+      {
+         "active": false,
+         "audible": false,
+         "autoDiscardable": true,
+         "discarded": false,
+         "favIconUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABKElEQVRYR+2XIQ4CMRBFXxVIJA4cV0EiccsN9ggEiSOcABwSiSQcAYdb3EqCAlVStiULCWHbQoYQmtT9mfn9/Z2dVQgvJVyfP4HvVEBDHWgCDbuNVdqefsks/gCYnSs4Pea4U0AXRbtAy7NYVfgeWCnIXcCNgC0+AGpVswXizsDMkSgT6AOdwKS+YTsFCxNUJjD0zRKDVzC6EdCF2dKYhAGxY2PKqwK6cHhSOUmvB8tlZfgT4FxBFkZAa9hsIEkgc6/Nm08kAVPveITJBIZB9nkDAXfo7RbSFNZrHxneSMCVnU4LNQ6m8b1cv0RA7ApETSj6DD/QiGRbsW3HQd3k5WN7Arj7GFkC4p9jMw3JDSRWBbmRrHxVYkNpqKFi4r7zvyDmRL6xfwUuMUl+IYSS65sAAAAASUVORK5CYII=",
+         "height": 595,
+         "highlighted": false,
+         "id": 1868,
+         "incognito": false,
+         "index": 0,
+         "mutedInfo": {
+            "muted": false
+         },
+         "pinned": false,
+         "selected": false,
+         "status": "complete",
+         "title": "Building Realtime Serverless APIs with GraphQL and Azure - YouTube",
+         "url": "chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#ttl=Building%20Realtime%20Serverless%20APIs%20with%20GraphQL%20and%20Azure%20-%20YouTube&pos=0&uri=https://www.youtube.com/watch?v=0YOaYUYd2-s&t=0s",
+         "width": 1362,
+         "windowId": 1867
+      },
+"""
 
 
 def get_saved_sessions(conn, tname, full):
